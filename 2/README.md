@@ -1,6 +1,6 @@
 # Домашнее задание № 4
 
-Сделаны задачи 1–3. Осталась задача 4.
+Все четыре задачи выполнены.
 
 | План | Индекс | nReturned | totalDocsExamined | totalKeysExamined | Шаги выполнения |
 | --- | --- | --- | --- | --- | --- |
@@ -8,8 +8,8 @@
 | plan-2.json | `{ service: 1, level: 1, ts: -1, duration_ms: 1 }` | 33 | 33 | 43 | IXSCAN → FETCH |
 | plan-3a.json | `{ duration_ms: 1, service: 1, level: 1, ts: -1 }` | 33 | 33 | 378 | IXSCAN → SORT → FETCH |
 | plan-3b.json | `{ service: 1, level: 1, duration_ms: 1, ts: -1 }` | 33 | 33 | 33 | IXSCAN → SORT → FETCH |
-| plan-4-bez.json | Только `_id_` | — | — | — | — |
-| plan-4.json | Подобрать в задаче 4 | — | — | — | — |
+| plan-4-bez.json | Только `_id_` | 10 | 1200 | 0 | COLLSCAN → SORT |
+| plan-4.json | `{ level: 1, duration_ms: -1 }` | 10 | 10 | 10 | IXSCAN → FETCH → LIMIT |
 
 ## Задача 1
 
@@ -36,3 +36,15 @@ db.events.createIndex({ service: 1, level: 1, ts: -1, duration_ms: 1 })
 В варианте Б (E–R–S) остался `SORT`, потому что диапазон `duration_ms` стоит перед полем сортировки `ts`.
 
 Оставил бы индекс ESR из задачи 2: он сокращает чтение и сразу даёт нужную сортировку.
+
+## Задача 4
+
+E — `level`, S — `duration_ms`. Диапазона нет.
+
+```javascript
+db.events.createIndex({ level: 1, duration_ms: -1 })
+```
+
+Из 180 ошибок сервер прочитал только 10: индекс отдаёт самые долгие первыми, а `limit(10)` останавливает чтение.
+
+[Разбор второго запроса с индексом](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:7VXJcts4EP2VVFeOjEvUavNmWdJE5TBSQmWWclSuNtCUEYMADYAylZT-fQqQtUSesTPLYQ5zktB8jV7eQ_c3oLqUKNTPZKzQChKIIYL7isxqKlEpMpB8A4UF2RIZQQJSL-wJLUk5CxEIxakeCenIZOQgyVFaiqBEY4l_8Nd4f0lLkv7Pa7qHBMgYbWC9fgz0Fu0tJNAZNrutdmcIEZQS1QWyW7qkFSTQbw0H_dPuACLQpROF-IpOaDUTBaVCSmEhaURQYD322RCfmEzLykPsR_LX8F1ie9C54s-hMobKzvSwLqXmdAx4EEoJtfAt8mVZhwvfm3fjdDyDCKQohDsvdKUcJHHDt6msXLZB7eGj4eziLfzZ1_Gv2cX5e4jgjlZTdI6MOuhlHAGvTOjDdWEheROvH9l4j0XgyeOu4-sD1PUbT66waSWdCK3d1vtomKK7tQdBruZHUa7mPor9pMR9RTt3YbNA-IFhisYJlHuLz2wnsmYEXBhibiO5XJsHNHwrp76uFP8uDbj6vBHNZ4he7f7O4Ul6cJVifUmr6FUq1CWt5jBfr73QDH0h5oh7xrZ1UE0s8J85dCHe3lIxRtZC4kxFEaiP5CqjvAA8mzvYkQKddigvaWWHNRZiBw_mgWZH5sPwC7J_pKOX4w6tEwU6CvEftLmzkMRxBMiXqNjWURFx7xNQ_vCbIMnDyeKSfP2bb4as0-bAIOxwMgpq-4ua_pupN_711BsR8Ce9R2kIuZ88k5svG_Tzb_C_VM7_8-AfzYPQwCM9WKLAl_cv7Yysow0p_jgwuizDeTNLmC4KVNwnlAv_C7t1mIdNeJDqdtdFYLVx_sNTlsLL2uTxmt88rtjgQmZJZqxy7R1vtXWQQPcszxvNM8YZz_2qDNc2e424F8Fyt8V7J42TdgsiWAi33-2Ud7DHW-3Txk3nLCekuMU73Xar142bZzlrMyLqxr3ePvgUDRbkyIT-C-VVhzIs9hEycv0qz8lk4iv1V46C5NunnV63EZ7UMTrFelK5snIDzZ73eaf1XVWG9zj2poK4QEcDzaqClL_oef8tMNOVYfST0VWZYp1Soc3qhUxTrPtSszuhFpk2buPzyeLipRKnRt-KG-G23imZBU1UqtVCZ49D5vs455zPdEbuR-vIyP0iFNcPIz817I9WNPIc-pF0oZUzWm6eGKMLidYKNlQLochzru8gide_Aw).

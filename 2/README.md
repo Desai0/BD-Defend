@@ -1,13 +1,13 @@
 # Домашнее задание № 4
 
-Сделаны задачи 1 и 2. Остальные пока не выполнены.
+Сделаны задачи 1–3. Осталась задача 4.
 
 | План | Индекс | nReturned | totalDocsExamined | totalKeysExamined | Шаги выполнения |
 | --- | --- | --- | --- | --- | --- |
 | plan-1.json | Только `_id_` | 33 | 1200 | 0 | COLLSCAN → SORT |
 | plan-2.json | `{ service: 1, level: 1, ts: -1, duration_ms: 1 }` | 33 | 33 | 43 | IXSCAN → FETCH |
-| plan-3a.json | `{ duration_ms: 1, service: 1, level: 1, ts: -1 }` | — | — | — | — |
-| plan-3b.json | `{ service: 1, level: 1, duration_ms: 1, ts: -1 }` | — | — | — | — |
+| plan-3a.json | `{ duration_ms: 1, service: 1, level: 1, ts: -1 }` | 33 | 33 | 378 | IXSCAN → SORT → FETCH |
+| plan-3b.json | `{ service: 1, level: 1, duration_ms: 1, ts: -1 }` | 33 | 33 | 33 | IXSCAN → SORT → FETCH |
 | plan-4-bez.json | Только `_id_` | — | — | — | — |
 | plan-4.json | Подобрать в задаче 4 | — | — | — | — |
 
@@ -28,3 +28,11 @@ db.events.createIndex({ service: 1, level: 1, ts: -1, duration_ms: 1 })
 Документов просмотрено в 36,36 раза меньше (1200 / 33). `SORT` исчез, потому что индекс уже даёт нужный порядок по `ts`.
 
 [Разбор плана с индексом](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:7VZLc9s4DP4rGUwPe2AzUmzHiW7xa5vJunardB-TZjwICTlsJFIhKUduxv99h5Sf2d2kx92ZPUkEARAf-AHgM1Bd5ijVr2Ss1AoSiIHBY0VmOc1RKTKQPIPCgmyJnCCBXM_tMS1IOQsMpBJUj2TuyKTkIMkwt8SgRGNJfPJuvP07VAKSm2fIaUF5kNAjJEDGaAOrFXsGS2Yh_QGbvRKXRTgkbIvKoJNazQobVOYOkk4UrVa3q3W4H9DeQwL9XtzuDM8GwKDMUfWR39MVLSGBwagXx_GwBwx06WQhvweP17KgscxzaSGJGBRYX3pMJCYm1XnlVexn8m7EFt5O6UKJ17RSjspe62Fd5lrQS4UnqZRUc59oD8o6nPsMj4bX_Q8ht2Xl0ka42738Pe1ffAQGD7SconNkGuNN_mK2yXLMwFlI3sfsMH3xan1vH7HwHtems3gWDGfxzNnZ-3i2ZzTzrJB2XOVOhmxuIK4FU3T39iCMm9ttHP7XB-K_B4Hc-MuT9ouSjxVtfUqbBvrsCaZonMR8J_HRbyl7wkBIQ9w1BM60eUIjNuTs6UqJF7HBzdctv74CO9pf3cJe5F4xkLTRWv8GlYAIbsZYX9GSHY2luqJl2DnECD91oogdSZUdR7dwu1qtGBj6RtyR8De_yQPVxAOPUocuxLuTVJyTtZA4UxED9ZlcZZQnUqu1Z7jPZH_32mF-RUs7rLGQQb3dWosHmu-JD7wEwtm_4-Pb5w6tkwU6CpX0pM2Dbc5EsUDFN4aKSHgbSM6bxR-SchFsLC7I4288GLJOmz2BtMPJKIATfwGAuSEUvg1M7r412q_Xz78Jzv-1_J-s5XBxL-rLEnmexJE3Lu01WUcNG_xyYHRZhnVoBFwXRZiNz5BJ_4XtZM3CUD3AupuJW1TrEcr-eUAysNo4L2sItGLwTtytBzn4bTILMpcq017pXlsHCZyeZ1l0cs4FF5kfpcHFSTeKuwwW27dC9zg6breAwVy63QuCsg52Rat9Ft11zjNCiluic9pudU_jk_OMtzkRncbd7u7wKRosyJEJsUvlCwHz8HwYISfXq7KMTCq_U2_pKGS3fdbpnkahyl9qj7GeVK6s3EDz121-0fqhKkOLuPSigoRERwPNK5_nMdav228UU10ZTj8bXZVjrMdUaLN8I9Ix1r1c8wep5qk2rrH5YnH-FsSp0ffyTrqN9ZjMnCZqrNVcp-u-d3jOhRDXOiX3ozhScr9JJfTTyDcy-6OIRv4OfZfsa-WMzpvy5dTP0VrJh2ouFfk71w--b_0J).
+
+## Задача 3
+
+Вариант А (R–E–S) просмотрел 378 ключей: диапазон стоит первым и захватывает события разных сервисов и уровней.
+
+В варианте Б (E–R–S) остался `SORT`, потому что диапазон `duration_ms` стоит перед полем сортировки `ts`.
+
+Оставил бы индекс ESR из задачи 2: он сокращает чтение и сразу даёт нужную сортировку.

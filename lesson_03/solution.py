@@ -45,7 +45,7 @@ def show_page(title, **options):
 
 
 def receive_delivery():
-    """Поставка в песочнице и результаы"""
+    """Принять поставку в песочнице и вывести результаты операций."""
     box = client["sandbox"]["products"]
     print("\nПриемка поставки в sandbox.products")
 
@@ -118,7 +118,7 @@ def main():
     try:
         sys.stdout.reconfigure(encoding="utf-8")
         client.admin.command("ping")
-        print("Успехх")
+        print("Подключение к MongoDB установлено")
         show_page("Весь каталог, с 1", page=1)
         show_page("Ноутбуки, с 1", category="ноутбуки", page=1, per_page=3)
         show_page("Ноутбуки, с 9", category="ноутбуки", page=9, per_page=3)

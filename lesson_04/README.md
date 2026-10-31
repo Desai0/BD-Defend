@@ -1,73 +1,57 @@
-# Домашнее задание № 4
+# Домашнее задание № 4 · План запроса и индексы
 
-Все четыре задачи выполнены.
+Колобов Евгений Денисович · 9РПО1 · 31.10.2026
 
-## Запуск
+MongoDB 7.0.43, `logs.events` — 1200 документов.
 
-Из корня репозитория, после запуска MongoDB по [START.md](../START.md):
-
-```bash
-rtk proxy python -m pip install -r requirements.txt
-rtk proxy python stend/load_practice.py logs
-rtk proxy python lesson_04/plan.py plan-current.json
-```
-
-Скрипт снимает план запроса из задачи 4 и сохраняет рядом с собой.
-Индексы он не создаёт: перед замером нужен индекс из соответствующей задачи.
-Шесть приложенных `plan-*.json` — сохранённые результаты отдельных замеров.
-Чтобы повторить сравнение с нуля, загрузите `logs` с флагом `--reset`.
-
-## Результаты
-
-Повторная проверка 31.10.2026 на MongoDB 7.0.43: у всех шести планов
-совпали количество результатов, просмотренных документов и ключей, а также
-шаги выполнения. Скрипт `plan.py` тоже проверен на текущем порту 27017.
-
-| План | Индекс | nReturned | totalDocsExamined | totalKeysExamined | Шаги выполнения |
-| --- | --- | --- | --- | --- | --- |
-| plan-1.json | Только `_id_` | 33 | 1200 | 0 | COLLSCAN → SORT |
-| plan-2.json | `{ service: 1, level: 1, ts: -1, duration_ms: 1 }` | 33 | 33 | 43 | IXSCAN → FETCH |
-| plan-3a.json | `{ duration_ms: 1, service: 1, level: 1, ts: -1 }` | 33 | 33 | 378 | IXSCAN → SORT → FETCH |
-| plan-3b.json | `{ service: 1, level: 1, duration_ms: 1, ts: -1 }` | 33 | 33 | 33 | IXSCAN → SORT → FETCH |
-| plan-4-bez.json | Только `_id_` | 10 | 1200 | 0 | COLLSCAN → SORT |
-| plan-4.json | `{ level: 1, duration_ms: -1 }` | 10 | 10 | 10 | IXSCAN → FETCH → LIMIT |
+| План | Индекс | nReturned | totalDocsExamined | totalKeysExamined | Шаги снизу вверх |
+|---|---|---|---|---|---|
+| [plan-1.json](plan-1.json) | Только `_id_` | 33 | 1200 | 0 | COLLSCAN → SORT |
+| [plan-2.json](plan-2.json) | `{"service": 1, "level": 1, "ts": -1, "duration_ms": 1}` | 33 | 33 | 43 | IXSCAN → FETCH |
+| [plan-3a.json](plan-3a.json) | `{"duration_ms": 1, "service": 1, "level": 1, "ts": -1}` | 33 | 33 | 378 | IXSCAN → SORT → FETCH |
+| [plan-3b.json](plan-3b.json) | `{"service": 1, "level": 1, "duration_ms": 1, "ts": -1}` | 33 | 33 | 33 | IXSCAN → SORT → FETCH |
+| [plan-4-bez.json](plan-4-bez.json) | Только `_id_` | 10 | 1200 | 0 | COLLSCAN → SORT |
+| [plan-4.json](plan-4.json) | `{"level": 1, "duration_ms": -1}` | 10 | 10 | 10 | IXSCAN → FETCH → LIMIT |
 
 ## Задача 1
 
-Подходящего индекса нет, поэтому MongoDB проверила все 1200 документов и отсортировала 33 найденные записи в памяти.
+```javascript
+db.events.find({service: "payments", level: "error", duration_ms: {$gt: 500}}).sort({ts: -1})
+```
 
-[Разбор плана](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:zVXbbiM3DP0XYh-ngSe-xfOWOHYbbFynmbSLxaIoGIkzUa2RZiWOM17D_15Iji_ZS7LYAkWfPCZ5SPHwUFoDtbVGZf4g55U1kEEKCXxsyK1uNBpDDrI1GKzI1ygIMtC29Ce0JMMeElBGUjtVmsnlxJAVqD0lUKPzJH8LaQL-DRoJ2Yc1aFqSjhb6CBmQc9bBZpOswZNbqlBg56txVcUi0S0bh6ys-avyMaRkyPqdzmbz5-bpuL-gf4AMxhdprz85u4QEao1mjOKB3tLqucfWrCr1KWa8UxXNlNbKQ9ZJoML2KvREcu5yq5sQ4m8ppJH79g5B50a-FJULNP7OTtpaW0mfBzwqY5QpA9GhKc9YBobz-e0dJOCt4xtkJhe97CH7Kd0kUFF1rSrFkKWd3ll_OOh0EuBVHaBeVbWmOJe64Xyb8JB5PL--zsfnv0ICRZzZfzAcqRwJ3mqrsO4RnQwocPQ3CSYZuveQfQix1JKIXOaMHHMdLI0Q5D1k7BpKwNwSN84EMrvdI-Bn02TLqN_Syk9arFQM31kvrTiypqeBxeP6JfmvDOX1uhPPqkKmWOnRuoUP2bv9BFAu0Ygd1BDJgIq10-3_94r09ogelxRICO7AlWfrjgzKT-bT-PWvVLIlAhlz9Yly6zgcbpSepQk0nuSl8ou9WH2ttN6yGj9JRiBbhyUFfHT9f3T3o5MKs_jmpNLB8Icn9bVFSEB-IcNN2A5hqyrys4ZChV_YX7kHBvf0HHhJdmw-0Zh8m6Stdp6J5o28f7rhIbjJLcldmcKGoAfrGTIYjIqiczoSUsgi3LExxemwkw4TWO4fkeFJ56TXhQRKxYenhYo-DmW3d9a5748KQkq7sj_odYeD9HRUiJ4gokE6HB6K36DDiphcPLsyQeao47syRUF80RQFuaC-ixWHhT0S-5fRM2znDdcNX1rxMuba2kVTRx1fBVNFUiHTpRVN4HmG7cv4XWBuGyfoZ2ebeobtjCrrVq-cdIbthbZioUwZNnKL-d1j-VqLN84-qHvFO_SMXElzM7OmtPnTcj6vcy7lnc2Jv7ePnPidMtI-ToP6_fd2NA0zDPs1toad1Vv9Cxpr9F6JiSmVoTBzu4As3fwD).
+Найдено 33 записи. Подходящего индекса нет, поэтому сервер проверил все 1200 документов и отсортировал результат в памяти. Разбор в MongoPilot подтвердил полный перебор и сортировку в памяти.
+
+[Разбор без индекса](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:zVXbbiM3DP0XYh-nwUx8zbwljt0GG9dpJu1isSgKRuJMVGukWUnj2Gv43wvK8SV7SRZboOiTxyQPKR4eSmugZaNRmT_IeWUN5JBBAh9bcqsbjcaQg3wNBmvyDQqCHLSt_AktyAQPCSgjaTlROpArKEBeovaUQIPOk_yN0zD-DRoJ-Yc1aFqQjhb6CDmQc9bBZpOswZNbKC6w8zW4qmOR6Jatw6Cs-av2MaQKkPfSdLP5c_N03F_QP0AOo4us2xsPLyGBRqMZoXigt7R67rFNULX6FDPeqZqmSmvlIU8TqHF5xT2RnLnC6pZD_C1xGrlv7xB0buRLUYVA4-_seNloK-nzgEdljDIVE81N-YAVM1zMbu8gAW9duMEQyEVv8JD_lG0SqKm-VrUKkGdpd9gb9NM0gbBqGOpV3WiKc2naUGwTHjKPZtfXxej8V0igjDP7D4YjlSPBXsihtO4RnWQUOPqbRCDJ3XvIP3AsLUlELouA3O_6yNIKQd5DHlxLCZhbCq0zTGancwT8bJrBBtRvaeXHS6xVDN9ZL604smanzOJx_Yr8V4byet2xD6rGQLHSo3Vzz9k7vQRQLtCIHdQQSUbF2tn2_3tFentEjwtiEtjNXPlg3ZFB-fFsEr_-lUq2RGDAQn2iwrrAhzvLhlkCrSd5qfx8L1bfKK23rMZPkhEYrMOKGB9d_x_d_eikeBbfnFTWH_zwpL62CAnIL2S44e0Qtq4jP2soFf_C_so9MLin58BLsmPzicbk2yRttfNMNG_k_dMND-wmtyB3ZUrLQQ_WB8ihg9gd9lD001LwHRtTnA7SbJDAYv-IDE7Sk24HEqhUODwtVPZwIDvdYXrfOysJKevIXr_bGfSz07NSdAUR9bPB4FD8Bh3WFMjFsyvDMkcd35UJCgoXbVmSY_VdrAIv7JHYv4ye4nLWhqYNl1a8jLm2dt42UcdXbKpJKgx0aUXLPE9x-TJ-F1jY1gn62dm2meJySrV1q1dOOsXlhbZirkzFG7nF_O6xeq3FG2cf1L0KO_SUXEUzM7WmssXTcj6vcy7lnS0ofG8fBYV3ykj7OGH1--_taMIz5P0aWROcZXGW1gkaafReibGplCGeuZ1Dnp2km38A).
 
 ## Задача 2
 
 E — `service`, `level`; S — `ts`; R — `duration_ms`.
 
 ```javascript
-db.events.createIndex({ service: 1, level: 1, ts: -1, duration_ms: 1 })
+db.events.createIndex({service: 1, level: 1, ts: -1, duration_ms: 1})
 ```
 
-Документов просмотрено в 36,36 раза меньше (1200 / 33). `SORT` исчез, потому что индекс уже даёт нужный порядок по `ts`.
+Просмотрено 33 документа вместо 1200 — в 36,36 раза меньше. `SORT` исчез: индекс уже задаёт порядок по `ts` для выбранных сервиса и уровня. В MongoPilot также получены 33 документа и 43 ключа, полный перебор отсутствует.
 
-[Разбор плана с индексом](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:7VZLc9s4DP4rGUwPe2AzUmzHiW7xa5vJunardB-TZjwICTlsJFIhKUduxv99h5Sf2d2kx92ZPUkEARAf-AHgM1Bd5ijVr2Ss1AoSiIHBY0VmOc1RKTKQPIPCgmyJnCCBXM_tMS1IOQsMpBJUj2TuyKTkIMkwt8SgRGNJfPJuvP07VAKSm2fIaUF5kNAjJEDGaAOrFXsGS2Yh_QGbvRKXRTgkbIvKoJNazQobVOYOkk4UrVa3q3W4H9DeQwL9XtzuDM8GwKDMUfWR39MVLSGBwagXx_GwBwx06WQhvweP17KgscxzaSGJGBRYX3pMJCYm1XnlVexn8m7EFt5O6UKJ17RSjspe62Fd5lrQS4UnqZRUc59oD8o6nPsMj4bX_Q8ht2Xl0ka42738Pe1ffAQGD7SconNkGuNN_mK2yXLMwFlI3sfsMH3xan1vH7HwHtems3gWDGfxzNnZ-3i2ZzTzrJB2XOVOhmxuIK4FU3T39iCMm9ttHP7XB-K_B4Hc-MuT9ouSjxVtfUqbBvrsCaZonMR8J_HRbyl7wkBIQ9w1BM60eUIjNuTs6UqJF7HBzdctv74CO9pf3cJe5F4xkLTRWv8GlYAIbsZYX9GSHY2luqJl2DnECD91oogdSZUdR7dwu1qtGBj6RtyR8De_yQPVxAOPUocuxLuTVJyTtZA4UxED9ZlcZZQnUqu1Z7jPZH_32mF-RUs7rLGQQb3dWosHmu-JD7wEwtm_4-Pb5w6tkwU6CpX0pM2Dbc5EsUDFN4aKSHgbSM6bxR-SchFsLC7I4288GLJOmz2BtMPJKIATfwGAuSEUvg1M7r412q_Xz78Jzv-1_J-s5XBxL-rLEnmexJE3Lu01WUcNG_xyYHRZhnVoBFwXRZiNz5BJ_4XtZM3CUD3AupuJW1TrEcr-eUAysNo4L2sItGLwTtytBzn4bTILMpcq017pXlsHCZyeZ1l0cs4FF5kfpcHFSTeKuwwW27dC9zg6breAwVy63QuCsg52Rat9Ft11zjNCiluic9pudU_jk_OMtzkRncbd7u7wKRosyJEJsUvlCwHz8HwYISfXq7KMTCq_U2_pKGS3fdbpnkahyl9qj7GeVK6s3EDz121-0fqhKkOLuPSigoRERwPNK5_nMdav228UU10ZTj8bXZVjrMdUaLN8I9Ix1r1c8wep5qk2rrH5YnH-FsSp0ffyTrqN9ZjMnCZqrNVcp-u-d3jOhRDXOiX3ozhScr9JJfTTyDcy-6OIRv4OfZfsa-WMzpvy5dTP0VrJh2ouFfk71w--b_0J).
+[Разбор с ESR](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:7VZLc9s2EP4rnp0cekA8pCVZNm_Wq_G4ipXQ6WMcj2YNLGXEJEADoExFw__eAfR2WzvHdqYnEov99oUPu1gC1WWOUv1KxkqtIIEYGDxVZBaTHJUiA8kSFBZkS-QECeR6Zo9pTspZYCCVoHokc0cmJQdJhrklBiUaS-KTN-Px71AJSG6XkNOc8iChJ0iAjNEGmoYtwZKZS-9gs1fioghOwraoDDqp1bSwQWXmIOlEUdPcNetwP6B9gAT6vbjdGZ4NgEGZo-ojf6ArWkACg1EvjuNhDxjo0slCfg8Wb2RBY5nn0kISMSiwvvQ5kbg2qc4rr2I_kzcjtuntlC6UeE0r5ajsjR7WZa4FvVR4lkpJNfOF9klZhzNf4dHwpv8h1LasXLoS7nYvf0_7Fx-BwSMtJugcmRV4U7-YbaocM3AWkvcxOyxf3KzP7SMW3uIaOo2nATiNp85O38fTPdDUs0LacZU7Gaq5SXEtmKB7sAdh3N5t4_C_PhD_PQjk1h-etF-UfKpoa1PaNNBnTzBB4yTmO4mPfkvZEwZCGuLeLiSQafOMRmzI2dOVEi9ig9uvW359BXa0v7qDvci9YiDpSmv9G1RCRnA7xvqKFuxoLNUVLcLOYY7wUyeK2JFU2XF0B3dN0zAw9I24I-FPflMHqokHHqUOve3lnqTinKyFxJmKGKjP5CqjPJFarT3gCyY77TC_ooUd1ljIoN5urcUDzffEB1YC4ezf8fFtv0PrZIGOgv9nbR7tyieKOSq-ASoi4TGQnK8Wf0jKRcBYnJPPf2XBkHXa7AmkHV6PArHFXxLA3BAK3wau77-ttF-_P_-mdP6_y__JuxwO7sX9skSeJ3HkwaW9Iev81no5MLoswzo0Aq6LIszGJWTSf2E7WbMwVA9y3c3EbVbrEcr-eUAysNo4L1sRqGHwTtyvBzn4bTJzMpcq017pQVsHCbQQ22cd5KdRxv0oDSZOulHcZTDfvhW6x9FxuwUMZtLtXhCUdbArWu2z6L5znhFS3BKd03arexqfnGe8zYnoNO52d84naLAgRybELpW_CJiH58MIOblelWVkUvmdegvnm1Mctc863dMo3PKX2mOsrytXVm6g-euYX7R-rMrQIi69qCAh0dFA88rXeYz16_iNYqorw-lno6tyjPWYCm0Wb0Q6xrqXa_4o1SzVxq0wXyzO3kpxYvSDvJdugx6TmdG1Gms10-m67x36uRDiRqfkfjSPlNxvUgn9PPKNzP5oRiN_hr5L9rVyRntyZtpw6udoreRDNZOK_JnrR0ji46j5Ew).
 
 ## Задача 3
 
-Вариант А (R–E–S) просмотрел 378 ключей: диапазон стоит первым и захватывает события разных сервисов и уровней.
+Вариант А (R–E–S) просмотрел 378 ключей: диапазон стоит первым и захватывает события всех сервисов и уровней.
 
-В варианте Б (E–R–S) остался `SORT`, потому что диапазон `duration_ms` стоит перед полем сортировки `ts`.
+В варианте Б (E–R–S) просмотрено 33 ключа, но остался `SORT`: диапазон `duration_ms` стоит перед `ts`, поэтому общего порядка по времени нет.
 
-Оставил бы индекс ESR из задачи 2: он сокращает чтение и сразу даёт нужную сортировку.
+Оставил бы ESR из задачи 2: он сокращает чтение и не требует отдельной сортировки.
 
 ## Задача 4
 
-E — `level`, S — `duration_ms`. Диапазона нет.
-
 ```javascript
-db.events.createIndex({ level: 1, duration_ms: -1 })
+db.events.find({level: "error"}).sort({duration_ms: -1}).limit(10)
+db.events.createIndex({level: 1, duration_ms: -1})
 ```
 
-Из 180 ошибок сервер прочитал только 10: индекс отдаёт самые долгие первыми, а `limit(10)` останавливает чтение.
+E — `level`, S — `duration_ms`, диапазона нет. Сначала отбираются ошибки, затем они идут по длительности от большей к меньшей.
 
-[Разбор второго запроса с индексом](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:7VXJcts4EP2VVFeOjEvUavNmWdJE5TBSQmWWclSuNtCUEYMADYAylZT-fQqQtUSesTPLYQ5zktB8jV7eQ_c3oLqUKNTPZKzQChKIIYL7isxqKlEpMpB8A4UF2RIZQQJSL-wJLUk5CxEIxakeCenIZOQgyVFaiqBEY4l_8Nd4f0lLkv7Pa7qHBMgYbWC9fgz0Fu0tJNAZNrutdmcIEZQS1QWyW7qkFSTQbw0H_dPuACLQpROF-IpOaDUTBaVCSmEhaURQYD322RCfmEzLykPsR_LX8F1ie9C54s-hMobKzvSwLqXmdAx4EEoJtfAt8mVZhwvfm3fjdDyDCKQohDsvdKUcJHHDt6msXLZB7eGj4eziLfzZ1_Gv2cX5e4jgjlZTdI6MOuhlHAGvTOjDdWEheROvH9l4j0XgyeOu4-sD1PUbT66waSWdCK3d1vtomKK7tQdBruZHUa7mPor9pMR9RTt3YbNA-IFhisYJlHuLz2wnsmYEXBhibiO5XJsHNHwrp76uFP8uDbj6vBHNZ4he7f7O4Ul6cJVifUmr6FUq1CWt5jBfr73QDH0h5oh7xrZ1UE0s8J85dCHe3lIxRtZC4kxFEaiP5CqjvAA8mzvYkQKddigvaWWHNRZiBw_mgWZH5sPwC7J_pKOX4w6tEwU6CvEftLmzkMRxBMiXqNjWURFx7xNQ_vCbIMnDyeKSfP2bb4as0-bAIOxwMgpq-4ua_pupN_711BsR8Ce9R2kIuZ88k5svG_Tzb_C_VM7_8-AfzYPQwCM9WKLAl_cv7Yysow0p_jgwuizDeTNLmC4KVNwnlAv_C7t1mIdNeJDqdtdFYLVx_sNTlsLL2uTxmt88rtjgQmZJZqxy7R1vtXWQQPcszxvNM8YZz_2qDNc2e424F8Fyt8V7J42TdgsiWAi33-2Ud7DHW-3Txk3nLCekuMU73Xar142bZzlrMyLqxr3ePvgUDRbkyIT-C-VVhzIs9hEycv0qz8lk4iv1V46C5NunnV63EZ7UMTrFelK5snIDzZ73eaf1XVWG9zj2poK4QEcDzaqClL_oef8tMNOVYfST0VWZYp1Soc3qhUxTrPtSszuhFpk2buPzyeLipRKnRt-KG-G23imZBU1UqtVCZ49D5vs455zPdEbuR-vIyP0iFNcPIz817I9WNPIc-pF0oZUzWm6eGKMLidYKNlQLochzru8gide_Aw).
+Без индекса прочитано 1200 документов, с индексом — 10 документов и 10 ключей. Всего ошибок 180, но индекс сразу отдаёт самые долгие, а `limit(10)` останавливает чтение после десятой.
 
-MongoDB 7.0.43, `logs.events` — 1200 записей. Скрипт выгрузки — `plan.py`. Планы без индекса и с ESR дополнительно сверены в MongoPilot.
+[Разбор второго запроса с индексом](https://dfrancour.dev/tools/mongodb-paste-the-plan#v1:7VXJcts4EP2VVFeOjIu0Noc3a5uoHMZKqEwy5bhcbaApIQYBGgBlKSn9-xSgNfKMnVkOc5gTicbr_aH7O9CikijUr2Ss0ApSSCCC-5rMcixRKTKQfgeFJdkKGUEKUk_tCc1JOQsRCMVpMRTSkcnJQVqgtBRBhcYSf-_NeH1Jc5L-5yXdQwpkjDawWm0cvUE7gxRag9N2o9kaQASVRNVDNqMLWkIK3cag3z1r9yECXTlRim_ohFYTUVImpBQW0jiCEhcjHw3xS5NrWXuI_UDeDN8FtgedK_4UKmeo7EQPFpXUnI4BD0Ipoaa-RD4t63Dqa_N2lI0mEIEUpXDnpa6VgzSJfZmq2uVr1B4-HEx6b-DPbkef8975O4jgjpZjdI6MOqhlEgGvTajDTWkhfZWsNt14h2Xok8fdJDcHqJtXvrnCZrV0IpR2m-9GMEY3swdOrq6PvFxdey_2oxL3Ne3Uhc1Dww8EYzROoNxLfGQ7kp1GwIUh5u1CCoU2D2j4lk5dXSv-Qxhw9WVNmi8Qvdj9XsOj8OAqw8UFLaMXmVAXtLyG69XKE83QV2KOuO_YNg9aEAv9zx264G8vqRkjayF1pqYI1AdytVGeAL6bO9gRA512KC9oaQcLLMUOHsR9zY7Eh-6nZP-IR8_7HVgnSnQU_D9oc2chTZIIkM9Rsa2iIuJeJ6D84TdBkoeTxTn5_Nd3hqzT5kAg7OByGNj2Fzn9N0OP__XQ4wj4o9qjNITcT57L269r9NNv8L-Uzv_z4B_Ng1DAIz5YotAvr1_ZCVnnbzx16sr2ja6qcF7PEqbLEhX3ARXCf2G3DouwCQ9C3e66CKw2zl887lJ4Wes4XvLbzYoNKmTmZEaq0F5xpq2DFBqIzbMWsnZcML8qg9nTTpx0IpjvtnjnJD5pNiCCqXD73U5FCzu80TyLb1uvC0JKGrzVbjY67eT0dcGajIjaSaezdz5GgyU5MqH-QnnWoQyLfYiMXLcuCjK5-EbdpfNDLImbZ61OOw5P6hid4eKydlXt-po9rfNW67u6Cu9x5EUlcYGO-prVJSlv6Gn9LTDXtWH0i9F1leEio1Kb5TORZrjoSs3uhJrm2ri1zkeL0-dSHBs9E7fCbbUzMlO6VJlWU51vhsyPfs45n-ic3M_mkZP7JBTXD0M_NezPZjT0PfQjqaeVM9rTstCGUU-itYIN1FQo8j3Xd5AmJ_Hqdw).

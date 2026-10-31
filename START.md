@@ -49,7 +49,7 @@ rtk proxy docker compose -f stend/docker-compose.yml logs --tail 50 mongo
 
 Готовые работы перенесены из прежних папок `1/` и `2/`:
 
-- [lesson_03](lesson_03/README.md) — каталог товаров, отчёт и шесть скриншотов;
+- [lesson_03](lesson_03/README.md) — каталог товаров, отчёт и workflow для шести скриншотов;
 - [lesson_04](lesson_04/README.md) — индексы, отчёт и шесть планов запросов.
 
 Для них нужны PyMongo и отдельные учебные данные: команды есть в этих папках.

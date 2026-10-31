@@ -14,7 +14,7 @@
 - Вариант выполнения: программа на Python, просмотр данных в Compass и проверка через запросы к MongoDB в терминале.
 - Базы: `shop` — исходный каталог, `sandbox` — изменения.
 - Коллекция: `products`.
-- Команда запуска из корня репозитория: `rtk proxy python -X utf8 lesson_03/workflow.py --reset`.
+- Команда запуска из корня репозитория: `rtk proxy python -X utf8 lesson_03/solution.py`.
 
 ### Результаты
 

@@ -11,3 +11,8 @@ dump/
 # локальные переменные окружения
 .env
 .env.local
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]

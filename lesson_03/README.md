@@ -4,7 +4,21 @@
 
 <https://maximbytecamp.github.io/mongodb_theory_makarov/praktiki/01-katalog-tovarov/index.html>
 
-## Что делаем
+## Запуск готовой работы
+
+Из корня репозитория, после запуска MongoDB по [START.md](../START.md):
+
+```bash
+rtk proxy python -m pip install -r requirements.txt
+rtk proxy python stend/load_practice.py catalog
+rtk proxy python lesson_03/solution.py
+```
+
+Для повторения с исходными остатками выполните загрузку с `--reset`.
+Приёмка прибавляет остатки при каждом запуске; защита от дублей новых товаров
+не отменяет повторное прибавление количества.
+
+## Описание задания
 
 Выполняем практику полностью на своей копии репозитория: запускаем программу,
 подключаем её к MongoDB, создаём или загружаем каталог товаров, выполняем
